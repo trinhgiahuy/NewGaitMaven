@@ -7,8 +7,8 @@ from std_msgs.msg import String
 from geometry_msgs.msg import PointStamped
 from sensor_msgs.msg import NavSatFix, MagneticField, Imu
 from imu_sequenced.msg import ImuSequenced
-from ublox_msgs.msg import NavPVT7wH #, NavSOL, NavVELNED
-from pozyx.msg import StringStamped
+#from ublox_msgs.msg import NavPVT7wH #, NavSOL, NavVELNED
+#from pozyx.msg import StringStamped
 from vectornav.msg import imugps
 
 #from decimal import *
@@ -20,7 +20,7 @@ import threading
 
 import time
 filename = time.strftime("%Y-%m-%d-%H-%M-%S")
-filename = "/home/pi/data/" + filename + ".txt"
+filename = "/home/ubuntu/data/" + filename + ".txt"
 
 file = open(filename, "a")
 
@@ -626,14 +626,14 @@ def listener():
     # run simultaneously.
     rospy.init_node('ascii_logger', anonymous=True)
 
-    rospy.Subscriber('imu/data', ImuSequenced, xsenscallback)
+    #rospy.Subscriber('imu/data', ImuSequenced, xsenscallback)
     rospy.Subscriber('gps/fix', NavSatFix, gpscallback)
     #rospy.Subscriber('gps/navvelned', NavVELNED, navvelnedcallback)
-    rospy.Subscriber('gps/navpvtwh', NavPVT7wH, navpvtcallback)
-    rospy.Subscriber('pozyx/data', ImuSequenced, pozyxcallback)
-    rospy.Subscriber('pozyx/pos', PointStamped, poscallback)
+    #rospy.Subscriber('gps/navpvtwh', NavPVT7wH, navpvtcallback)
+    #rospy.Subscriber('pozyx/data', ImuSequenced, pozyxcallback)
+    #rospy.Subscriber('pozyx/pos', PointStamped, poscallback)
     #rospy.Subscriber('pozyx/mag', MagneticField, magcallback)
-    rospy.Subscriber('pozyx/range', StringStamped, rangecallback)
+    #rospy.Subscriber('pozyx/range', StringStamped, rangecallback)
 
     rospy.Subscriber('vectornav/imugps', imugps, vectornavcallback)
 
