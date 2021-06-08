@@ -5,10 +5,10 @@ project(ascii_logger)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  ublox_msgs
-  pozyx
+
+  
   imu_sequenced
-  xsens_driver
+  
   rospy
   sensor_msgs
   geometry_msgs
