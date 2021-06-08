@@ -2,7 +2,7 @@
 
 # VARIABLES TO CONFIGURE
 
-HOME="/home/pi"
+HOME="/home/ubuntu"
 
 # Needed for rostopic etc
 #source /opt/ros/indigo/setup.bash
@@ -30,7 +30,7 @@ GPS=1
 MTW=1
 
 # wired MTi connected = 0, not = 1
-MTI=0
+MTI=1
 
 # Vectornav INS connected = 0, not = 1
 INS=0
@@ -101,7 +101,7 @@ if [ "$1" = "check" ]; then
 	testCmd rosrun
 	testCmd rosbag
 	if [ "$PWRSWITCH" -eq 0 ]; then
-		testCmd $HOME/openkin/linux-shutdown/pwr-switch
+		testCmd $HOME/NewGaitMaven/linux-shutdown/pwr-switch
 	fi
 	testCmd readlink
 
@@ -132,9 +132,9 @@ if [ ! -p "$INSRECORDING" ]; then
 fi
 
 if [ "$PWRSWITCH" -eq 0 ]; then
-	sudo $HOME/openkin/linux-shutdown/pwr-switch &
+	sudo $HOME/NewGaitMaven/linux-shutdown/pwr-switch &
 elif [ "$PWRSWITCH" -eq 2 ]; then
-	sudo python $HOME/openkin/shutdown_flip.py &
+	sudo python $HOME/NewGaitMaven/shutdown_flip.py &
 fi
 
 if [ "$POZYX" -eq 0 ] && [ "$LINUXI2C" -eq 1 ]; then
@@ -197,19 +197,19 @@ function led_blink_f {
 for i in {0..2}; do
 	if [ "${LED[$i]}" -eq 3 ] || [ "${LED[$i]}" -eq 2 ] || [ "${LED[$i]}" -eq 0 ] || [ "${LED[$i]}" -eq 4 ]; then
 		if [ "${LED[$i]}" -eq 3 ]; then
-			sudo python $HOME/openkin/led-pin.py ${LEDGPIO[$i]} >> $LEDLOG 2>&1 &
+			sudo python $HOME/NewGaitMaven/led-pin.py ${LEDGPIO[$i]} >> $LEDLOG 2>&1 &
 		fi
 
 		if [ "${LED[$i]}" -eq 2 ]; then
-			sudo bash $HOME/openkin/led-linuxpwm.sh $i ${LEDGPIO[$i]} >> $LEDLOG 2>&1 &
+			sudo bash $HOME/NewGaitMaven/led-linuxpwm.sh $i ${LEDGPIO[$i]} >> $LEDLOG 2>&1 &
 		fi
 
 		if [ "${LED[$i]}" -eq 0 ]; then
-			sudo bash $HOME/openkin/led-linuxgpio.sh $i ${LEDGPIO[$i]} >> $LEDLOG 2>&1 &
+			sudo bash $HOME/NewGaitMaven/led-linuxgpio.sh $i ${LEDGPIO[$i]} >> $LEDLOG 2>&1 &
 		fi
 
 		if [ "${LED[$i]}" -eq 4 ]; then
-			sudo bash $HOME/openkin/led-linuxgpio.sh $i ${LEDGPIO[$i]} 1 >> $LEDLOG 2>&1 &
+			sudo bash $HOME/NewGaitMaven/led-linuxgpio.sh $i ${LEDGPIO[$i]} 1 >> $LEDLOG 2>&1 &
 		fi
 
 		SUDOPID[$i]=$!
