@@ -27,8 +27,11 @@
 #include <unistd.h>
 #include <math.h>
 #include <stdlib.h>     /* exit, EXIT_FAILURE */
-
-#include <vn/sensors.h>
+#include <cmath>
+#include <inttypes.h>
+#include "vn/sensors.h"
+#include "vn/compositedata.h"
+#include "vn/util.h"
 
 #include <ros/ros.h>
 #include <tf/tf.h>
@@ -45,6 +48,7 @@
 
 using namespace vn::protocol::uart;
 using namespace vn::sensors;
+using namespace vn::math;
 
 // Signal-safe flag for whether shutdown is requested
 sig_atomic_t volatile g_request_shutdown = 0;
@@ -185,10 +189,11 @@ void publish_ins_data()
     }
 }
 
+/*
 void binaryMessageReceived(void * user_data, Packet & p, size_t index)
 {
     std::string raw_data;
-    if (p.type() == Packet::TYPE_BINARY && p.isValid()) {
+    if (p.type() == Packet::TYPE_HEXADECIMAL && p.isValid()) {
         switch (p.groups()) {
         case ins_group_signature:
             ++ins_msg_count;
@@ -214,7 +219,7 @@ void binaryMessageReceived(void * user_data, Packet & p, size_t index)
                         ins_binary_data.ins_status << " latitude: " << ins_binary_data.lla[0] <<
                         " longitude: " << ins_binary_data.lla[1] << " altitude: " << ins_binary_data.lla[2]);
             }
-            */
+            
             break;
         default:
             ROS_WARN("Received unknown group signature from vectornav");
@@ -223,6 +228,153 @@ void binaryMessageReceived(void * user_data, Packet & p, size_t index)
         ROS_WARN("Received invalid packet from vectornav.");
 	ROS_INFO("%s", p.datastr().c_str());
         // Ignore non-binary packets for now.
+    }
+}*/
+
+void binaryMessageReceived(void * user_data, Packet & p, size_t index)
+{
+  ROS_INFO("=================Measure===============");
+    std::string raw_data;
+    /*
+    //[Draft]
+    //ROS_INFO("packet.type() == ",p.type());
+    //ROS_INFO("packet.isValid() == ",p.isValid());
+    if (p.isValid()){
+      //if (p.type() == Packet::TYPE_BINARY && p.isValid())
+        switch (p.groups()) {
+        case ins_group_signature:
+            ++ins_msg_count;
+            ins_binary_data.gps_time =      p.extractUint64();
+            ins_binary_data.orientation =   p.extractVec4f();
+            ins_binary_data.angular_rate =  p.extractVec3f();
+            ins_binary_data.lla =           p.extractVec3d();
+            ins_binary_data.vel_ned =       p.extractVec3f();
+            ins_binary_data.accel =         p.extractVec3f();
+            ins_binary_data.dtheta =        p.extractVec4f();
+            ins_binary_data.dvel =          p.extractVec3f();
+            ins_binary_data.fix =           p.extractUint8();
+            ins_binary_data.gpslla =        p.extractVec3d();
+            ins_binary_data.gpsvel_ned =    p.extractVec3f();
+
+            publish_ins_data();
+
+            //*-----------if (remainder(ins_msg_count, 100) == 0) {
+                ins_msg_count = 0;
+                ROS_INFO_STREAM("INS_Time: " << ins_binary_data.gps_time*1E-9 << " Yaw: " <<
+                        ins_binary_data.ypr[0] << " Pitch: " << ins_binary_data.ypr[1] <<
+                        " Roll: " << ins_binary_data.ypr[2] << " INS_Status: " <<
+                        ins_binary_data.ins_status << " latitude: " << ins_binary_data.lla[0] <<
+                        " longitude: " << ins_binary_data.lla[1] << " altitude: " << ins_binary_data.lla[2]);
+            }
+	//----------------------------------NOT THIS-------------------------------
+            break;
+        default:
+            ROS_WARN("Received unknown group signature from vectornav");
+        }
+    } else {
+        ROS_WARN("Received invalid packet from vectornav.");
+	ROS_INFO("%s", p.datastr().c_str());
+        // Ignore non-binary packets for now.
+	}
+    
+    */
+
+    /*-------------------------2nd implementation--------------
+      //Not print finish extracting packet, ins count increase
+    if(p.isValid()){
+      ROS_INFO("Start extracting packet");
+      ++ins_msg_count;
+      ROS_INFO("ins msg count: %d",ins_msg_count);
+      ins_binary_data.gps_time =      p.extractUint64();
+      ins_binary_data.orientation =   p.extractVec4f();
+      ins_binary_data.angular_rate =  p.extractVec3f();
+      ins_binary_data.lla =           p.extractVec3d();
+      ins_binary_data.vel_ned =       p.extractVec3f();
+      ins_binary_data.accel =         p.extractVec3f();
+      ins_binary_data.dtheta =        p.extractVec4f();
+      ins_binary_data.dvel =          p.extractVec3f();
+      ins_binary_data.fix =           p.extractUint8();
+      ins_binary_data.gpslla =        p.extractVec3d();
+      ins_binary_data.gpsvel_ned =    p.extractVec3f();
+      ROS_INFO("Finish extracting packet");
+      publish_ins_data();
+      }*/
+	    
+    if(p.isValid()){
+    vn::sensors::CompositeData cd = vn::sensors::CompositeData::parse(p);
+    vec4f q = cd.quaternion();
+    vec3f ar = cd.angularRate();
+    vec3f al = cd.acceleration();
+    //ROS_INFO("q=%0.2f %f %f %f", q[0],q[1],q[2],q[3]);
+    //ROS_INFO("q: %f %f %f %f",q.getX(),q.getY(),q.getZ(),q.getW());
+    //ROS_INFO(q.x);
+    //ROS_INFO(q[0]);
+    vectornav::imugps msg_ins;
+    msg_ins.header.stamp = ros::Time::now();
+    msg_ins.header.frame_id = "ins";
+
+    //timeGps: uint64_t
+    msg_ins.time = cd.timeGps();
+    ROS_INFO("msg_ins time %" PRId64,msg_ins.time);
+    
+    msg_ins.orientation.x = q[0];
+    msg_ins.orientation.y = q[1];
+    msg_ins.orientation.z = q[2];
+    msg_ins.orientation.w = q[3];
+    ROS_INFO("Orientation=(%0.2f,%0.2f,%0.2f,%0.2f))",msg_ins.orientation.x,msg_ins.orientation.y,msg_ins.orientation.z,msg_ins.orientation.w);
+    
+    msg_ins.angular_velocity.x = ar[0];
+    msg_ins.angular_velocity.y = ar[1];
+    msg_ins.angular_velocity.z = ar[2];
+    ROS_INFO("Angular velocity=(%0.2f,%0.2f,%0.2f)",msg_ins.angular_velocity.x,msg_ins.angular_velocity.y,msg_ins.angular_velocity.z);
+      
+    msg_ins.linear_acceleration.x = al[0];
+    msg_ins.linear_acceleration.y = al[1];
+    msg_ins.linear_acceleration.z = al[2];
+    ROS_INFO("Linear acceleration=(%0.2f,%0.2f,%0.2f)",msg_ins.linear_acceleration.x,msg_ins.linear_acceleration.y,msg_ins.linear_acceleration.z);
+    
+    //positionEstimatedLla : math:vec3d
+    vec3d lla = cd.positionEstimatedLla();
+    msg_ins.LLA.x = lla[0];
+    msg_ins.LLA.y = lla[1];
+    msg_ins.LLA.z = lla[2];
+    ROS_INFO("LLA=(%lf,%lf,%lf)",msg_ins.LLA.x,msg_ins.LLA.y,msg_ins.LLA.z);
+    
+    //positionGpsLla : math:vec3d
+    vec3d gpslla = cd.positionGpsLla();
+    msg_ins.gpsLLA.x = gpslla[0];
+    msg_ins.gpsLLA.y = gpslla[1];
+    msg_ins.gpsLLA.z = gpslla[2];
+    ROS_INFO("gps_LLA=(%lf,%lf,%lf)",msg_ins.gpsLLA.x,msg_ins.gpsLLA.y,msg_ins.gpsLLA.z);
+      
+    vec3f nedVel = cd.velocityEstimatedNed();
+    msg_ins.nedvel.x = nedVel[0];
+    msg_ins.nedvel.y = nedVel[1];
+    msg_ins.nedvel.z = nedVel[2];
+    ROS_INFO("velocity_ned=(%0.2f,%0.2f,%0.2f)",msg_ins.nedvel.x,msg_ins.nedvel.y,msg_ins.nedvel.z);
+    
+    float dtime = cd.deltaTime();
+    vec3f dtheta = cd.deltaTheta();
+    msg_ins.dtime = dtime;
+    ROS_INFO("deltaTime=(%0.2f)",msg_ins.dtime);
+    msg_ins.dtheta[0] = dtheta[0];
+    msg_ins.dtheta[1] = dtheta[1];
+    msg_ins.dtheta[2] = dtheta[2];
+    ROS_INFO("deltaTheta=(%0.2f,%0.2f,%0.2f)",msg_ins.dtheta[0],msg_ins.dtheta[1],msg_ins.dtheta[2]);
+      
+    vec3f dvel = cd.deltaVelocity();
+    msg_ins.dvel[0] = dvel[0];
+    msg_ins.dvel[1] = dvel[1];
+    msg_ins.dvel[2] = dvel[2];
+    ROS_INFO("deltaVelocity=(%0.2f,%0.2f,%0.2f)",msg_ins.dvel[0],msg_ins.dvel[1],msg_ins.dvel[2]);
+    
+    vec3f gpsvel_ned = cd.velocityGpsNed();
+    msg_ins.gpsnedvel.x = gpsvel_ned[0];
+    msg_ins.gpsnedvel.y = gpsvel_ned[1];
+    msg_ins.gpsnedvel.z = gpsvel_ned[2];
+    ROS_INFO("gpsvel_ned=(%0.2f,%0.2f,%0.2f)",msg_ins.gpsnedvel.x,msg_ins.gpsnedvel.y,msg_ins.gpsnedvel.z);
+    //ROS_INFO("(dvel-%0.2f,%0.2f,%0.2f\n"),msg_ins.dvel, msg_ins.dvel[1],msg_ins.dvel[2]);
+    pub_ins.publish(msg_ins);
     }
 }
 
@@ -274,7 +426,7 @@ int main(int argc, char* argv[])
     ros::XMLRPCManager::instance()->bind("shutdown", shutdownCallback);
     signal(SIGINT, mySigintHandler);
 
-    n_.param<std::string>("serial_port" , port     , "/dev/ttyUSB0");
+    n_.param<std::string>("serial_port" , port     , "/dev/ttyAMA0");
     n_.param<int>(        "serial_baud" , baud     , 115200);
     n_.param<int>(        "poll_rate_gps"   , poll_rate_gps, 5);
     n_.param<int>(        "poll_rate_ins"   , poll_rate_ins, 20);
@@ -334,7 +486,7 @@ int main(int argc, char* argv[])
     //pub_ins     = n_.advertise<vectornav::ins>    ("ins", 1000);
     //pub_gps     = n_.advertise<vectornav::gps>    ("gps", 1000);
     //pub_sensors = n_.advertise<vectornav::sensors>("imu", 1000);
-    pub_ins       = n_.advertise<vectornav::imugps> ("imugps", 100);
+    pub_ins       = n_.advertise<vectornav::imugps> ("imugps", 1000);
 
     // Initialize VectorNav
     //VN_ERROR_CODE vn_retval;
@@ -410,8 +562,9 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    vn200.writeAsyncDataOutputFrequency(0);
-
+    //vn200.writeAsyncDataOutputFrequency(0);
+    vn200.writeAsyncDataOutputFrequency(async_output_rate);
+    
     CommonGroup ins_common_group = COMMONGROUP_TIMEGPS | COMMONGROUP_QUATERNION
         | COMMONGROUP_ANGULARRATE | COMMONGROUP_POSITION
         | COMMONGROUP_VELOCITY | COMMONGROUP_ACCEL | COMMONGROUP_DELTATHETA;
