@@ -315,7 +315,7 @@ void binaryMessageReceived(void * user_data, Packet & p, size_t index)
 
     //timeGps: uint64_t
     msg_ins.time = cd.timeGps();
-    ROS_INFO("msg_ins time %" PRId64,msg_ins.time);
+    ROS_INFO("msg_ins time %" PRIu64,msg_ins.time);
     
     msg_ins.orientation.x = q[0];
     msg_ins.orientation.y = q[1];
@@ -332,6 +332,29 @@ void binaryMessageReceived(void * user_data, Packet & p, size_t index)
     msg_ins.linear_acceleration.y = al[1];
     msg_ins.linear_acceleration.z = al[2];
     ROS_INFO("Linear acceleration=(%0.2f,%0.2f,%0.2f)",msg_ins.linear_acceleration.x,msg_ins.linear_acceleration.y,msg_ins.linear_acceleration.z);
+
+    msg_ins.fix = cd.fix();
+    ROS_INFO("Fix: %" PRIu8,msg_ins.fix);
+    if (cd.fix() > 2) {
+            std::fstream fs;
+            ledcount++;
+            std::ifstream rec;
+            try {
+                rec.open(insrecording, std::ios::in);
+                std::string line;
+                getline(rec, line);
+                if (line == "ON" && (!fix || ledcount > 3000)) {
+                    ledcount = 0;
+                    try {
+                        fs.open(ledpipe, std::fstream::out|std::fstream::app);
+                        fs << on;
+                        fix = true;
+                    } catch (...) {
+                        //
+                    }
+                }
+            } catch (...) {}
+    }
     
     //positionEstimatedLla : math:vec3d
     vec3d lla = cd.positionEstimatedLla();
