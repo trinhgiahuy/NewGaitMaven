@@ -127,7 +127,7 @@ def vectornavcallback(data):
         rospy.loginfo("Call write buffer in vectornav")
         writeBuffer()
 
-
+"""
 def gpscallback(data):
     rospy.loginfo("Call gps_callback func")
     global buffer, bufferlock, counter
@@ -155,7 +155,7 @@ def gpscallback(data):
         rospy.loginfo("Call write buffer in gps")
         writeBuffer()
         
-"""-----------------------
+
 def navvelnedcallback(data):
     global buffer, bufferlock
 
@@ -640,7 +640,7 @@ def listener():
     rospy.init_node('ascii_logger', anonymous=True)
 
     #rospy.Subscriber('imu/data', ImuSequenced, xsenscallback)
-    rospy.Subscriber('gps/fix', NavSatFix, gpscallback)
+    #rospy.Subscriber('gps/fix', NavSatFix, gpscallback)
     #rospy.Subscriber('gps/navvelned', NavVELNED, navvelnedcallback)
     #rospy.Subscriber('gps/navpvtwh', NavPVT7wH, navpvtcallback)
     #rospy.Subscriber('pozyx/data', ImuSequenced, pozyxcallback)
