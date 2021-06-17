@@ -20,6 +20,7 @@ import threading
 
 import time
 filename = time.strftime("%Y-%m-%d-%H-%M-%S")
+#filename = "test"
 filename = "/home/ubuntu/data/" + filename + ".txt"
 
 file = open(filename, "a")
@@ -31,6 +32,7 @@ xsens_ids = []
 
 counter = 0
 
+"""-------------------------------------
 def pozyxcallback(data):
     imucallback(data, True)
 
@@ -69,8 +71,10 @@ def imucallback(data, pozyx):
     if counter > 360:
         counter = 0
         writeBuffer()
+"""
 
 def vectornavcallback(data):
+    rospy.loginfo("Call vectornav_callback func")
     global buffer, counter, bufferlock
 
     point = {'timestamp.secs': data.header.stamp.secs,
@@ -116,12 +120,16 @@ def vectornavcallback(data):
 
     # write buffer to file every now and then
     counter += 1
+    #rospy.loginfo("Counter in vectornav_callback:")
+    
     if counter > 360:
         counter = 0
+        rospy.loginfo("Call write buffer in vectornav")
         writeBuffer()
 
 
 def gpscallback(data):
+    rospy.loginfo("Call gps_callback func")
     global buffer, bufferlock, counter
 
     #rospy.loginfo(rospy.get_caller_id() + 'GPS-data: %s', str(data))
@@ -141,10 +149,13 @@ def gpscallback(data):
 
     # write buffer to file every now and then
     counter += 1
+    #rospy.loginfo("Counter in gps_callback")
     if counter > 360:
         counter = 0
+        rospy.loginfo("Call write buffer in gps")
         writeBuffer()
-
+        
+"""-----------------------
 def navvelnedcallback(data):
     global buffer, bufferlock
 
@@ -247,6 +258,7 @@ def rangecallback(data):
         counter = 0
         writeBuffer()
 
+"""
 
 def writeline(str_towrite):
     global file
@@ -278,7 +290,8 @@ def writeBuffer():
                 xsens_ids.append(j['frame_id'])
                 xsens_ids.sort()
 
-        for i, j in enumerate(buffer):
+        # --------------No iTOW
+        for i, j in enumerate(buffer):           
             if 'iTOW' in j and 'timestamp.nsecs' in j:
                 #rospy.loginfo("found navvel")
                 dist = 0
@@ -297,7 +310,7 @@ def writeBuffer():
                     navjoins.append((i, i+dist))
                 elif prev_time:
                     navjoins.append((i, i-dist))
-
+        
         for j in navjoins:
             if 'iTOW' in buffer[j[0]]:
                 buffer[j[1]]['iTOW'] = buffer[j[0]].get('iTOW', 'NaN')
@@ -316,7 +329,7 @@ def writeBuffer():
 
 
         buffer = sorted(buffer, key=lambda x: x['timestamp.secs']+(1e-9*x['timestamp.nsecs']));
-
+        
 	#rospy.loginfo("Sorted")
 
         for i, j in enumerate(buffer):
