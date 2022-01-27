@@ -1,3 +1,4 @@
+## This repository is the extended test of [the origin OpenKinTest repository](https://github.com/trinhgiahuy/OpenKinTest) which target on (L)Ubuntu Xenial 16.04 using USB to connect to sensor instead of Raspian Jessie using UART  
 
 # Usage
 This section describes the basic usage of the device
